@@ -10,8 +10,8 @@
  *   Alois Zoitl, Monika Wenger - initial API and implementation and/or initial documentation
  *   Martin Melik-Merkumians - Adds methods for IB, QB, IL, and QL
  *******************************************************************************/
-#include "../../core/esfb.h"
-#include "../../core/resource.h"
+#include <esfb.h>
+#include <resource.h>
 
 #ifndef PROCESSINTERFACEBASE_H_
 #define PROCESSINTERFACEBASE_H_
@@ -19,13 +19,14 @@
 
 class CProcessInterfaceBase : public CEventSourceFB{
   public:
-    CProcessInterfaceBase(forte::core::CFBContainer &paContainer, const SFBInterfaceSpec *paInterfaceSpec,
-        const CStringDictionary::TStringId paInstanceNameId) :
-          CEventSourceFB(paContainer, paInterfaceSpec, paInstanceNameId){
-      setEventChainExecutor(getResource()->getResourceEventExecution());
+    CProcessInterfaceBase(CResource *paSrcRes, const SFBInterfaceSpec *paInterfaceSpec,
+        const CStringDictionary::TStringId paInstanceNameId, TForteByte *paFBConnData, TForteByte *paFBVarsData) :
+          CEventSourceFB(paSrcRes, paInterfaceSpec, paInstanceNameId, paFBConnData, paFBVarsData){
+  setEventChainExecutor(paSrcRes->getResourceEventExecution());
     }
 
-    ~CProcessInterfaceBase() override = default;
+    virtual ~CProcessInterfaceBase(){
+    }
 
   protected:
     CIEC_BOOL &QI(){
@@ -76,6 +77,7 @@ class CProcessInterfaceBase : public CEventSourceFB{
       return *static_cast<CIEC_DWORD*>(getDI(2));
     };
 
+#ifdef FORTE_USE_64BIT_DATATYPES
     CIEC_LWORD &IN_L(){
       return *static_cast<CIEC_LWORD*>(getDO(2));
     }
@@ -83,6 +85,7 @@ class CProcessInterfaceBase : public CEventSourceFB{
     CIEC_LWORD &OUT_L() {
       return *static_cast<CIEC_LWORD*>(getDI(2));
     };
+#endif /* FORTE_USE_64BIT_DATATYPES */
 
     //TODO move pin checking and managing code into this class. Can be solved with recurring template pattern
 };

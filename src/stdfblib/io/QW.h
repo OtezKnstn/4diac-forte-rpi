@@ -10,26 +10,18 @@
  *   Gerd Kainz - initial API and implementation and/or initial documentation
  *************************************************************************/
 
-#pragma once
+#ifndef _QW_H_
+#define _QW_H_
 
-#include "funcbloc.h"
-#include "forte_bool.h"
-#include "forte_string.h"
-#include "forte_word.h"
-#include "iec61131_functions.h"
-#include "forte_array_common.h"
-#include "forte_array.h"
-#include "forte_array_fixed.h"
-#include "forte_array_variable.h"
+#include <processinterface.h>
 
-#include "processinterface.h"
 
 /*! /brief generic class for QW function blocks providing access to one word physical output
  *
  * In order that this FB can be used implementations need to provide a class CProcessInterface
  * this class needs to inherit from CProcessInterfaceBase and provide the following functions
  *
- *   - bool initialise(bool paInput, CEventChainExecutionThread *const paECET)
+ *   - bool initialise(bool paInput)
  *     Initialize the physical output identified with the value of the PARAMS FB input
  *       - @param paInput: if true it should be an input, if false it should be an output
  *       - @return true on success, false on error
@@ -45,75 +37,58 @@
  * TODO a higher flexibility and easier use could be achieve if the base class would be a template parameter. However
  *   currently it is very hard to templatize a function block class.
  */
-class FORTE_QW final : public CProcessInterface {
+class FORTE_QW: public CProcessInterface{
   DECLARE_FIRMWARE_FB(FORTE_QW)
 
 private:
-  static const CStringDictionary::TStringId scmDataInputNames[];
-  static const CStringDictionary::TStringId scmDataInputTypeIds[];
-  static const CStringDictionary::TStringId scmDataOutputNames[];
-  static const CStringDictionary::TStringId scmDataOutputTypeIds[];
-  static const TEventID scmEventINITID = 0;
-  static const TEventID scmEventREQID = 1;
-  static const TDataIOID scmEIWith[];
-  static const TForteInt16 scmEIWithIndexes[];
-  static const CStringDictionary::TStringId scmEventInputNames[];
-  static const TEventID scmEventINITOID = 0;
-  static const TEventID scmEventCNFID = 1;
-  static const TDataIOID scmEOWith[]; 
-  static const TForteInt16 scmEOWithIndexes[];
-  static const CStringDictionary::TStringId scmEventOutputNames[];
+  static const CStringDictionary::TStringId scm_anDataInputNames[];
+  static const CStringDictionary::TStringId scm_anDataInputTypeIds[];
+  CIEC_BOOL &QI() {
+    return *static_cast<CIEC_BOOL*>(getDI(0));
+  };
 
-  static const SFBInterfaceSpec scmFBInterfaceSpec;
+  CIEC_STRING &PARAMS() {
+    return *static_cast<CIEC_STRING*>(getDI(1));
+  };
 
-  void executeEvent(TEventID paEIID, CEventChainExecutionThread *const paECET) override;
+  CIEC_WORD &st_OUT() {
+    return *static_cast<CIEC_WORD*>(getDI(2));
+  };
 
-  void readInputData(TEventID paEIID) override;
-  void writeOutputData(TEventID paEIID) override;
-  void setInitialValues() override;
+  static const CStringDictionary::TStringId scm_anDataOutputNames[];
+  static const CStringDictionary::TStringId scm_anDataOutputTypeIds[];
+  CIEC_BOOL &QO() {
+    return *static_cast<CIEC_BOOL*>(getDO(0));
+  };
+
+  CIEC_STRING &STATUS() {
+    return *static_cast<CIEC_STRING*>(getDO(1));
+  };
+
+  static const TEventID scm_nEventINITID = 0;
+  static const TEventID scm_nEventREQID = 1;
+  static const TForteInt16 scm_anEIWithIndexes[];
+  static const TDataIOID scm_anEIWith[];
+  static const CStringDictionary::TStringId scm_anEventInputNames[];
+
+  static const TEventID scm_nEventINITOID = 0;
+  static const TEventID scm_nEventCNFID = 1;
+  static const TForteInt16 scm_anEOWithIndexes[];
+  static const TDataIOID scm_anEOWith[];
+  static const CStringDictionary::TStringId scm_anEventOutputNames[];
+
+  static const SFBInterfaceSpec scm_stFBInterfaceSpec;
+
+   FORTE_FB_DATA_ARRAY(2, 3, 2, 0);
+
+  void executeEvent(int pa_nEIID);
 
 public:
-  FORTE_QW(const CStringDictionary::TStringId paInstanceNameId, forte::core::CFBContainer &paContainer);
+  FUNCTION_BLOCK_CTOR_WITH_BASE_CLASS(FORTE_QW, CProcessInterface){
+  };
 
-  CIEC_BOOL var_QI;
-  CIEC_STRING var_PARAMS;
-  CIEC_WORD var_OUT;
-  CIEC_BOOL var_QO;
-  CIEC_STRING var_STATUS;
-  CIEC_BOOL var_conn_QO;
-  CIEC_STRING var_conn_STATUS;
-  CEventConnection conn_INITO;
-  CEventConnection conn_CNF;
-  CDataConnection *conn_QI;
-  CDataConnection *conn_PARAMS;
-  CDataConnection *conn_OUT;
-  CDataConnection conn_QO;
-  CDataConnection conn_STATUS;
-  CIEC_ANY *getDI(size_t) override;
-  CIEC_ANY *getDO(size_t) override;
-  CEventConnection *getEOConUnchecked(TPortId) override;
-  CDataConnection **getDIConUnchecked(TPortId) override;
-  CDataConnection *getDOConUnchecked(TPortId) override;
-  void evt_INIT(const CIEC_BOOL &pa_QI, const CIEC_STRING &pa_PARAMS, const CIEC_WORD &pa_OUT, CIEC_BOOL &pa_QO, CIEC_STRING &pa_STATUS) {
-    var_QI = pa_QI;
-    var_PARAMS = pa_PARAMS;
-    var_OUT = pa_OUT;
-    receiveInputEvent(scmEventINITID, nullptr);
-    pa_QO = var_QO;
-    pa_STATUS = var_STATUS;
-  }
-  void evt_REQ(const CIEC_BOOL &pa_QI, const CIEC_STRING &pa_PARAMS, const CIEC_WORD &pa_OUT, CIEC_BOOL &pa_QO, CIEC_STRING &pa_STATUS) {
-    var_QI = pa_QI;
-    var_PARAMS = pa_PARAMS;
-    var_OUT = pa_OUT;
-    receiveInputEvent(scmEventREQID, nullptr);
-    pa_QO = var_QO;
-    pa_STATUS = var_STATUS;
-  }
-  void operator()(const CIEC_BOOL &pa_QI, const CIEC_STRING &pa_PARAMS, const CIEC_WORD &pa_OUT, CIEC_BOOL &pa_QO, CIEC_STRING &pa_STATUS) {
-    evt_INIT(pa_QI, pa_PARAMS, pa_OUT, pa_QO, pa_STATUS);
-  }
+  virtual ~FORTE_QW(){};
+
 };
 
-
-
+#endif //close the ifdef sequence from the beginning of the file

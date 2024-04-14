@@ -42,6 +42,8 @@ if [ -d "$forte_bin_dir" ]; then
     -DFORTE_MODULE_CONVERT=ON \
     -DFORTE_MODULE_IEC61131=ON \
     -DFORTE_MODULE_UTILS=ON \
+    -DFORTE_MODULE_SysFs=ON \
+    -DFORTE_LOGLEVEL=LOGDEBUG \
     ../../
 else
   echo "unable to create ${forte_bin_dir}"

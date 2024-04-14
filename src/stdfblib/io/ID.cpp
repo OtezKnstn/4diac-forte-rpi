@@ -16,158 +16,52 @@
 #include "ID_gen.cpp"
 #endif
 
-#include "criticalregion.h"
-#include "resource.h"
-
 DEFINE_FIRMWARE_FB(FORTE_ID, g_nStringIdID)
 
-const CStringDictionary::TStringId FORTE_ID::scmDataInputNames[] = {g_nStringIdQI, g_nStringIdPARAMS};
-const CStringDictionary::TStringId FORTE_ID::scmDataInputTypeIds[] = {g_nStringIdBOOL, g_nStringIdSTRING};
-const CStringDictionary::TStringId FORTE_ID::scmDataOutputNames[] = {g_nStringIdQO, g_nStringIdSTATUS, g_nStringIdIN};
-const CStringDictionary::TStringId FORTE_ID::scmDataOutputTypeIds[] = {g_nStringIdBOOL, g_nStringIdSTRING, g_nStringIdDWORD};
-const TDataIOID FORTE_ID::scmEIWith[] = {0, 1, scmWithListDelimiter, 0, scmWithListDelimiter};
-const TForteInt16 FORTE_ID::scmEIWithIndexes[] = {0, 3};
-const CStringDictionary::TStringId FORTE_ID::scmEventInputNames[] = {g_nStringIdINIT, g_nStringIdREQ};
-const TDataIOID FORTE_ID::scmEOWith[] = {0, 1, scmWithListDelimiter, 0, 1, 2, scmWithListDelimiter, 0, 1, 2, scmWithListDelimiter};
-const TForteInt16 FORTE_ID::scmEOWithIndexes[] = {0, 3, 7};
-const CStringDictionary::TStringId FORTE_ID::scmEventOutputNames[] = {g_nStringIdINITO, g_nStringIdCNF, g_nStringIdIND};
-const SFBInterfaceSpec FORTE_ID::scmFBInterfaceSpec = {
-  2, scmEventInputNames, scmEIWith, scmEIWithIndexes,
-  3, scmEventOutputNames, scmEOWith, scmEOWithIndexes,
-  2, scmDataInputNames, scmDataInputTypeIds,
-  3, scmDataOutputNames, scmDataOutputTypeIds,
-  0, nullptr,
-  0, nullptr
+const CStringDictionary::TStringId FORTE_ID::scm_anDataInputNames[] = {g_nStringIdQI, g_nStringIdPARAMS};
+
+const CStringDictionary::TStringId FORTE_ID::scm_anDataInputTypeIds[] = {g_nStringIdBOOL, g_nStringIdSTRING};
+
+const CStringDictionary::TStringId FORTE_ID::scm_anDataOutputNames[] = {g_nStringIdQO, g_nStringIdSTATUS, g_nStringIdIN};
+
+const CStringDictionary::TStringId FORTE_ID::scm_anDataOutputTypeIds[] = {g_nStringIdBOOL, g_nStringIdSTRING, g_nStringIdDWORD};
+
+const TForteInt16 FORTE_ID::scm_anEIWithIndexes[] = {0, 3};
+const TDataIOID FORTE_ID::scm_anEIWith[] = {0, 1, 255, 0, 255};
+const CStringDictionary::TStringId FORTE_ID::scm_anEventInputNames[] = {g_nStringIdINIT, g_nStringIdREQ};
+
+const TDataIOID FORTE_ID::scm_anEOWith[] = {0, 1, 255, 0, 1, 2, 255};
+const TForteInt16 FORTE_ID::scm_anEOWithIndexes[] = {0, 3, -1};
+const CStringDictionary::TStringId FORTE_ID::scm_anEventOutputNames[] = {g_nStringIdINITO, g_nStringIdCNF};
+
+const SFBInterfaceSpec FORTE_ID::scm_stFBInterfaceSpec = {
+  2,  scm_anEventInputNames,  scm_anEIWith,  scm_anEIWithIndexes,
+  2,  scm_anEventOutputNames,  scm_anEOWith, scm_anEOWithIndexes,  2,  scm_anDataInputNames, scm_anDataInputTypeIds,
+  3,  scm_anDataOutputNames, scm_anDataOutputTypeIds,
+  0, 0
 };
 
-FORTE_ID::FORTE_ID(const CStringDictionary::TStringId paInstanceNameId, forte::core::CFBContainer &paContainer) :
-        CProcessInterface(paContainer, &scmFBInterfaceSpec, paInstanceNameId),
-    var_conn_QO(var_QO),
-    var_conn_STATUS(var_STATUS),
-    var_conn_IN(var_IN),
-    conn_INITO(this, 0),
-    conn_CNF(this, 1),
-    conn_IND(this, 2),
-    conn_QI(nullptr),
-    conn_PARAMS(nullptr),
-    conn_QO(this, 0, &var_conn_QO),
-    conn_STATUS(this, 1, &var_conn_STATUS),
-    conn_IN(this, 2, &var_conn_IN) {
-};
 
-void FORTE_ID::setInitialValues() {
-  var_QI = 0_BOOL;
-  var_PARAMS = ""_STRING;
-  var_QO = 0_BOOL;
-  var_STATUS = ""_STRING;
-  var_IN = 0_DWORD;
-}
-
-void FORTE_ID::executeEvent(TEventID paEIID, CEventChainExecutionThread *const paECET) {
-  switch(paEIID) {
-    case cgExternalEventID:
-      sendOutputEvent(scmEventINDID, paECET);
+void FORTE_ID::executeEvent(int pa_nEIID){
+  QO() = QI();
+  switch(pa_nEIID){
+    case cg_nExternalEventID:
+      sendOutputEvent(scm_nEventINDID);
       break;
-    case scmEventINITID:
-      if (var_QI) {
-        var_QO = CIEC_BOOL(CProcessInterface::initialise(true, paECET)); //initialise as input
-      } else {
-        var_QO = CIEC_BOOL(CProcessInterface::deinitialise());
+    case scm_nEventINITID:
+      if(true == QI()){
+        QO() = CProcessInterface::initialise(true);  //initialise as input
       }
-      sendOutputEvent(scmEventINITOID, paECET);
-      break;
-    case scmEventREQID:
-      if (var_QI) {
-        var_QO = CIEC_BOOL(CProcessInterface::read(var_IN));
-      } else {
-        var_QO = false_BOOL;
+      else{
+        QO() = CProcessInterface::deinitialise();
       }
-      sendOutputEvent(scmEventCNFID, paECET);
+      sendOutputEvent(scm_nEventINITOID);
+      break;
+    case scm_nEventREQID:
+      if(true == QI()){
+        QO() = CProcessInterface::readDWord();
+      }
+      sendOutputEvent(scm_nEventCNFID);
       break;
   }
 }
-
-void FORTE_ID::readInputData(TEventID paEIID) {
-  switch(paEIID) {
-    case scmEventINITID: {
-      readData(0, var_QI, conn_QI);
-      readData(1, var_PARAMS, conn_PARAMS);
-      break;
-    }
-    case scmEventREQID: {
-      readData(0, var_QI, conn_QI);
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-void FORTE_ID::writeOutputData(TEventID paEIID) {
-  switch(paEIID) {
-    case scmEventINITOID: {
-      writeData(0, var_QO, conn_QO);
-      writeData(1, var_STATUS, conn_STATUS);
-      break;
-    }
-    case scmEventCNFID: {
-      writeData(0, var_QO, conn_QO);
-      writeData(1, var_STATUS, conn_STATUS);
-      writeData(2, var_IN, conn_IN);
-      break;
-    }
-    case scmEventINDID: {
-      writeData(0, var_QO, conn_QO);
-      writeData(1, var_STATUS, conn_STATUS);
-      writeData(2, var_IN, conn_IN);
-      break;
-    }
-    default:
-      break;
-  }
-}
-
-CIEC_ANY *FORTE_ID::getDI(size_t paIndex) {
-  switch(paIndex) {
-    case 0: return &var_QI;
-    case 1: return &var_PARAMS;
-  }
-  return nullptr;
-}
-
-CIEC_ANY *FORTE_ID::getDO(size_t paIndex) {
-  switch(paIndex) {
-    case 0: return &var_QO;
-    case 1: return &var_STATUS;
-    case 2: return &var_IN;
-  }
-  return nullptr;
-}
-
-CEventConnection *FORTE_ID::getEOConUnchecked(TPortId paIndex) {
-  switch(paIndex) {
-    case 0: return &conn_INITO;
-    case 1: return &conn_CNF;
-    case 2: return &conn_IND;
-  }
-  return nullptr;
-}
-
-CDataConnection **FORTE_ID::getDIConUnchecked(TPortId paIndex) {
-  switch(paIndex) {
-    case 0: return &conn_QI;
-    case 1: return &conn_PARAMS;
-  }
-  return nullptr;
-}
-
-CDataConnection *FORTE_ID::getDOConUnchecked(TPortId paIndex) {
-  switch(paIndex) {
-    case 0: return &conn_QO;
-    case 1: return &conn_STATUS;
-    case 2: return &conn_IN;
-  }
-  return nullptr;
-}
-
-
